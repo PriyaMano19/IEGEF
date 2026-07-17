@@ -1,11 +1,26 @@
+# Virtual environment
 venv/
-__pycache__/
-.ipynb_checkpoints/
-.DS_Store
 
+# Dataset
+datasets/
+
+# VS Code
+.vscode/
+
+# Training outputs
 outputs/
 checkpoints/
+logs/
+results/
 
+# Python
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+
+# Models
 *.pth
 *.pt
-*.log
+
+# macOS
+.DS_Store
