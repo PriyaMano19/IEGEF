@@ -31,7 +31,11 @@ class ExplainabilityEvaluator:
 
         self.target_layers = [model.layer4[-1]]
 
+        # Summary results
         self.results = []
+
+        # Per-image results
+        self.image_results = []
 
     def _evaluate_method(self, method_name):
 
@@ -40,6 +44,8 @@ class ExplainabilityEvaluator:
         coverages = []
 
         self.model.eval()
+
+        image_index = 0
 
         for images, masks, labels in tqdm(
             self.test_loader,
@@ -75,10 +81,12 @@ class ExplainabilityEvaluator:
                     model=self.model,
                     input_tensor=images,
                     target_class=labels.item()
-               )
+                )
 
             else:
                 raise ValueError("Unknown method")
+
+            # ---------------- Normalize ----------------
 
             explanation = normalize_map(explanation)
 
@@ -98,7 +106,10 @@ class ExplainabilityEvaluator:
 
             # ---------------- Metrics ----------------
 
-            iou = compute_iou(binary, gt_mask)
+            iou = compute_iou(
+                binary,
+                gt_mask
+            )
 
             point = pointing_game(
                 explanation,
@@ -113,6 +124,26 @@ class ExplainabilityEvaluator:
             ious.append(iou)
             pointing_scores.append(point)
             coverages.append(coverage)
+
+            # Save every image result
+
+            self.image_results.append({
+
+                "Image Index": image_index,
+
+                "Class": labels.item(),
+
+                "Method": method_name,
+
+                "IoU": iou,
+
+                "Pointing Game": point,
+
+                "Heatmap Coverage": coverage
+
+            })
+
+            image_index += 1
 
         result = {
 
@@ -142,12 +173,34 @@ class ExplainabilityEvaluator:
 
         return self._evaluate_method("Integrated Gradients")
 
-    def save_results(self, filename="results.csv"):
+    def save_results(
 
-        df = pd.DataFrame(self.results)
+        self,
 
-        df.to_csv(filename, index=False)
+        summary_file="../results/explainability_summary.csv",
 
-        print(df)
+        detailed_file="../results/explainability_image_results.csv"
 
-        print(f"\nResults saved to {filename}")
+    ):
+
+        summary_df = pd.DataFrame(self.results)
+
+        detailed_df = pd.DataFrame(self.image_results)
+
+        summary_df.to_csv(
+            summary_file,
+            index=False
+        )
+
+        detailed_df.to_csv(
+            detailed_file,
+            index=False
+        )
+
+        print("\nSummary Results")
+
+        print(summary_df)
+
+        print("\nSaved:", summary_file)
+
+        print("Saved:", detailed_file)
