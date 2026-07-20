@@ -31,8 +31,22 @@ def evaluate_model(model, dataloader, device):
     y_prob = []
 
     with torch.no_grad():
+        for batch in dataloader:
 
-        for images, labels in dataloader:
+            # Supports both:
+            # (images, labels)
+            # (images, masks, labels)
+
+            if len(batch) == 2:
+                images, labels = batch
+
+            elif len(batch) == 3:
+                images, _, labels = batch
+
+            else:
+                raise ValueError(
+                    f"Unexpected batch format. Expected 2 or 3 elements, got {len(batch)}."
+                )
 
             images = images.to(device)
             labels = labels.to(device)
